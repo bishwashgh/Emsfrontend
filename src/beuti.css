@@ -136,3 +136,73 @@ body {
 .signout-btn:active {
   transform: scale(0.95);
 }
+
+/* Add to beuti.css */
+.signup-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #4b006e, #7b2fbe);
+  padding: 20px;
+}
+
+.signup-box {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 420px;
+}
+
+.signup-box h2 {
+  color: #4b006e;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.signup-box label {
+  display: block;
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: 500;
+}
+
+.signup-box input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+.signup-box input:focus {
+  outline: none;
+  border-color: #4b006e;
+}
+
+.signup-box .submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: #4b006e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.signup-box .submit-btn:hover:not(:disabled) {
+  background: #6a1b9a;
+}
+
+.signup-box .submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

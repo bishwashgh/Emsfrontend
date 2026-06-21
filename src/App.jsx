@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import "./beuti.css";
 import Signout from "./Signout.jsx";
+import SignUp from "./SignUp.jsx";
 import { auth } from './services/api';
 
 function App() {
+  const [showSignUp, setShowSignUp] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -18,7 +20,7 @@ function App() {
       setIsLoggedIn(true);
       fetchProfile();
     }
-    console.log('🚀 App Connected to:', import.meta.env.VITE_API_URL || 'https://ems.bishwasghimire.com.np');
+    console.log('🚀 App Connected to:', import.meta.env.VITE_API_URL || 'https://ems.bishwasghimire.com.np/api');
   }, []);
 
   const fetchProfile = async () => {
@@ -35,16 +37,16 @@ function App() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(null);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      // ✅ Use signIn method
       const res = await auth.signIn({
         email: formData.email,
         password: formData.password,
@@ -52,18 +54,17 @@ function App() {
 
       console.log('✅ Sign in response:', res);
 
-      // Check if login was successful
-      if (res.accessToken || res.access_token || res.token) {
+      if (res.accessToken || res.access_token) {
         setIsLoggedIn(true);
         setSuccess('✅ Login successful!');
         setFormData({ email: '', password: '' });
-        
-        // Fetch user data
         await fetchProfile();
-        return;
+      } else if (res.otpRequired) {
+        // Handle 2FA if required
+        setError('2FA code required. Please enter your authenticator code.');
+      } else {
+        setError('Login failed: unexpected response from server.');
       }
-
-      setError('Login failed: unexpected response from server.');
     } catch (err) {
       console.error('Login error:', err);
       setError(err.message || 'Login failed. Please try again.');
@@ -79,6 +80,11 @@ function App() {
     setSuccess(null);
     setError(null);
   };
+
+  // Show Sign Up page
+  if (showSignUp) {
+    return <SignUp onSwitchToLogin={() => setShowSignUp(false)} />;
+  }
 
   // Logged-in dashboard
   if (isLoggedIn) {
@@ -140,7 +146,7 @@ function App() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSignIn}>
               <h2>Login</h2>
 
               <label>Email</label>
@@ -171,6 +177,24 @@ function App() {
                 {loading ? 'Logging in...' : 'Submit'}
               </button>
             </form>
+
+            <div style={{ marginTop: '15px', textAlign: 'center' }}>
+              <p style={{ color: '#666' }}>
+                Don't have an account?{' '}
+                <button
+                  onClick={() => setShowSignUp(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#4b006e',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Sign Up
+                </button>
+              </p>
+            </div>
 
             <div className="socials">
               <span>f</span>
