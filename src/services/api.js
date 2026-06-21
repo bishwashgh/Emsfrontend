@@ -1,8 +1,8 @@
 // src/services/api.js
 import axios from 'axios';
 
-// Your backend API base URL
-const API_BASE = import.meta.env.VITE_API_URL || 'https://ems.bishwasghimire.com.np';
+// ✅ Make sure API_BASE includes /api
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ems.bishwasghimire.com.np/api';
 
 console.log('🚀 API Base URL:', API_BASE);
 
@@ -14,7 +14,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor - Attach token
+// Request interceptor
 api.interceptors.request.use((config) => {
   try {
     const token = localStorage.getItem('access_token');
@@ -29,7 +29,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor - Handle errors
+// Response interceptor
 api.interceptors.response.use(
   (response) => {
     console.log('📥 API Response:', response.status, response.config.url);
@@ -39,7 +39,6 @@ api.interceptors.response.use(
     if (error.response) {
       console.error('❌ API Error:', error.response.status, error.response.data);
       
-      // Handle 401 Unauthorized
       if (error.response.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
@@ -58,46 +57,17 @@ function unwrapError(err) {
   return { message: err.message || 'Unknown error' };
 }
 
-// JWT decode helper
-function decodeJwt(token) {
-  try {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-    const payload = parts[1];
-    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decoded);
-  } catch (e) {
-    return null;
-  }
-}
-
 export const auth = {
-  // ✅ Sign Up - matches your backend route
-  signUp: async (userData) => {
-    try {
-      const res = await api.post('/authentication/sign-up', userData);
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-
-  // ✅ Sign In - matches your backend route
   signIn: async (credentials) => {
     try {
       console.log('📤 Sign in request for:', credentials.email);
+      // ✅ This will call: https://ems.bishwasghimire.com.np/api/authentication/sign-in
       const res = await api.post('/authentication/sign-in', credentials);
       console.log('📥 Sign in response:', res.data);
       
-      // Store tokens based on your backend response
       const token = res.data.accessToken || res.data.access_token || res.data.token;
-      const refreshToken = res.data.refreshToken || res.data.refresh_token;
-      
       if (token) {
         localStorage.setItem('access_token', token);
-        if (refreshToken) {
-          localStorage.setItem('refresh_token', refreshToken);
-        }
         if (res.data.user) {
           localStorage.setItem('user', JSON.stringify(res.data.user));
         }
@@ -109,41 +79,15 @@ export const auth = {
     }
   },
 
-  // ✅ Refresh Tokens
-  refreshTokens: async (refreshTokenDto) => {
+  signUp: async (userData) => {
     try {
-      const res = await api.post('/authentication/refresh-tokens', refreshTokenDto);
-      const token = res.data.accessToken || res.data.access_token;
-      if (token) {
-        localStorage.setItem('access_token', token);
-      }
+      const res = await api.post('/authentication/sign-up', userData);
       return res.data;
     } catch (err) {
       throw unwrapError(err);
     }
   },
 
-  // ✅ Verify Sign Up OTP
-  verifySignUpOtp: async (otpData) => {
-    try {
-      const res = await api.post('/authentication/sign-up/verify', otpData);
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-
-  // ✅ Two Factor Authentication
-  twoFactor: async () => {
-    try {
-      const res = await api.post('/authentication/twofactor');
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-
-  // ✅ Logout from current device
   logout: async () => {
     try {
       const refreshToken = localStorage.getItem('refresh_token');
@@ -160,31 +104,12 @@ export const auth = {
     }
   },
 
-  // ✅ Logout from all devices
-  logoutAll: async () => {
-    try {
-      await api.post('/authentication/logout-all');
-    } catch (err) {
-      console.error('Logout all error:', err);
-    } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
-      window.location.href = '/';
-    }
-  },
-
-  getToken: () => localStorage.getItem('access_token'),
-  
-  getRefreshToken: () => localStorage.getItem('refresh_token'),
-
   getProfile: async () => {
     try {
       const token = localStorage.getItem('access_token');
       if (!token) throw { message: 'No access token' };
       
-      // Try to get profile - you might need to add this endpoint
-      // For now, decode token
+      // Decode JWT to get user info
       const payload = decodeJwt(token);
       return payload;
     } catch (err) {
@@ -193,77 +118,17 @@ export const auth = {
   },
 };
 
-export const bookings = {
-  create: async (payload) => {
-    try {
-      const res = await api.post('/bookings', payload);
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-  get: async (id) => {
-    try {
-      const res = await api.get(`/bookings/${id}`);
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-};
-
-export const venues = {
-  list: async () => {
-    try {
-      const res = await api.get('/venue');
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-  get: async (id) => {
-    try {
-      const res = await api.get(`/venue/${id}`);
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-};
-
-export const users = {
-  list: async () => {
-    try {
-      const res = await api.get('/users');
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-  get: async (id) => {
-    try {
-      const res = await api.get(`/users/${id}`);
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-  update: async (id, payload) => {
-    try {
-      const res = await api.patch(`/users/${id}`, payload);
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-  remove: async (id) => {
-    try {
-      const res = await api.delete(`/users/${id}`);
-      return res.data;
-    } catch (err) {
-      throw unwrapError(err);
-    }
-  },
-};
+// JWT decode helper
+function decodeJwt(token) {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = parts[1];
+    const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(decoded);
+  } catch (e) {
+    return null;
+  }
+}
 
 export default api;
