@@ -1,16 +1,20 @@
 // src/services/api.js
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://ems.bishwasghimire.com.np';
+// ✅ FIX: Add /api to the base URL
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ems.bishwasghimire.com.np/api';
+
+console.log('🚀 API Base URL:', API_BASE);
 
 const api = axios.create({
   baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Important for CORS
 });
 
-// Attach token automatically
+// Request interceptor - Attach token
 api.interceptors.request.use((config) => {
   try {
     const token = localStorage.getItem('access_token');
@@ -18,18 +22,42 @@ api.interceptors.request.use((config) => {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log('📤 API Request:', config.method.toUpperCase(), config.url);
   } catch (e) {
     // ignore
   }
   return config;
 });
 
+// Response interceptor - Handle errors
+api.interceptors.response.use(
+  (response) => {
+    console.log('📥 API Response:', response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    if (error.response) {
+      console.error('❌ API Error:', error.response.status, error.response.data);
+      
+      // Handle 401 Unauthorized
+      if (error.response.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+      }
+    } else if (error.request) {
+      console.error('❌ No Response from Server');
+    }
+    return Promise.reject(error);
+  }
+);
+
 function unwrapError(err) {
   if (err?.response?.data) return err.response.data;
   return { message: err.message || 'Unknown error' };
 }
 
-// minimal JWT decode (no dependency) to read payload
+// JWT decode helper
 function decodeJwt(token) {
   try {
     const parts = token.split('.');
@@ -43,32 +71,56 @@ function decodeJwt(token) {
 }
 
 export const auth = {
+  // ✅ FIX: Use /auth/login instead of /authentication/sign-in
   login: async (credentials) => {
     try {
-      const path = import.meta.env.VITE_AUTH_LOGIN_PATH || '/authentication/sign-in';
+      const path = import.meta.env.VITE_AUTH_LOGIN_PATH || '/auth/login';
+      console.log('📤 Login request to:', `${API_BASE}${path}`);
+      
       const res = await api.post(path, credentials);
-      const token = res.data.accessToken || res.data.access_token || res.data.token || res.data.accessToken;
-      if (token) localStorage.setItem('access_token', token);
+      console.log('📥 Login response:', res.data);
+      
+      const token = res.data.accessToken || res.data.access_token || res.data.token;
+      if (token) {
+        localStorage.setItem('access_token', token);
+        if (res.data.user) {
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+        }
+      }
       return res.data;
     } catch (err) {
+      console.error('Login error:', err);
       throw unwrapError(err);
     }
   },
+  
   logout: () => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+    window.location.href = '/';
   },
+  
   getToken: () => localStorage.getItem('access_token'),
 
-  // new helper: decode token and fetch user from backend
   getProfile: async () => {
     try {
       const token = localStorage.getItem('access_token');
       if (!token) throw { message: 'No access token' };
-      const payload = decodeJwt(token);
-      const userId = payload?.sub || payload?.id;
-      if (!userId) throw { message: 'Invalid token payload' };
-      const res = await api.get(`/users/${userId}`);
-      return res.data;
+      
+      // Try to get profile from /auth/profile first
+      try {
+        const res = await api.get('/auth/profile');
+        return res.data;
+      } catch (profileError) {
+        // Fallback: decode token and get user by ID
+        const payload = decodeJwt(token);
+        const userId = payload?.sub || payload?.id;
+        if (userId) {
+          const res = await api.get(`/users/${userId}`);
+          return res.data;
+        }
+        throw { message: 'Invalid token payload' };
+      }
     } catch (err) {
       throw unwrapError(err);
     }
