@@ -1,0 +1,138 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background: #4b006e;
+}
+
+.container {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-box {
+  width: 900px;
+  height: 500px;
+  background-color: #5a007d;
+  display: flex;
+  padding: 20px;
+  box-shadow: 0px 0px 10px gray;
+}
+
+.left {
+  width: 50%;
+  color: white;
+  padding: 40px;
+}
+
+.left h1 {
+  font-size: 50px;
+}
+
+.left p {
+  margin-top: 20px;
+  line-height: 25px;
+}
+
+.learn-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  border: none;
+  background: orange;
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.right {
+  width: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-box {
+  width: 300px;
+  padding: 30px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 5px;
+}
+
+.login-box h2 {
+  text-align: center;
+  color: white;
+}
+
+.login-box label {
+  color: white;
+  display: block;
+  margin-top: 10px;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: none;
+  border-radius: 10px;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 15px;
+  padding: 10px;
+  border: none;
+  background: hotpink;
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.social-icons {
+  text-align: center;
+  margin-top: 15px;
+  color: white;
+}
+
+.social-icons span {
+  margin:  10px;
+  cursor: pointer;
+}
+.forgot-password {
+  text-align: center;
+  margin-top: 5px;
+}
+
+.forgot-password a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+.signout-btn {
+  margin-top: 20px;
+  padding: 18px 30px;
+  border: none;
+  border-radius: 25px;
+  background: #ff4b5c;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.signout-btn:hover {
+  background: #d9364a;
+  transform: scale(1.05);
+}
+
+.signout-btn:active {
+  transform: scale(0.95);
+}
