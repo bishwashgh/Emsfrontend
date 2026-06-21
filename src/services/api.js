@@ -70,13 +70,20 @@ function decodeJwt(token) {
 }
 
 export const auth = {
-  // ✅ Sign Up - Step 1: Request OTP
   signUp: async (userData) => {
     try {
       console.log('📤 Sign up request for:', userData.email);
+      // Log without sensitive data
+      console.log('📤 Sign up data:', {
+        name: userData.name,
+        email: userData.email,
+        password: '***',
+        confirmPassword: '***'
+      });
+      
       const res = await api.post('/authentication/sign-up', userData);
       console.log('📥 Sign up response:', res.data);
-      return res.data; // Returns { otpRequired: true, challengeId: "..." }
+      return res.data;
     } catch (err) {
       console.error('Sign up error:', err);
       throw unwrapError(err);

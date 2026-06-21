@@ -8,7 +8,7 @@ function SignUp({ onSwitchToLogin }) {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '', // ✅ Add confirmPassword
+    confirmPassword: '',
   });
   const [otp, setOtp] = useState('');
   const [challengeId, setChallengeId] = useState('');
@@ -27,6 +27,29 @@ function SignUp({ onSwitchToLogin }) {
     setError(null);
     setSuccess(null);
 
+    // ✅ Validate name (min 2 characters)
+    if (formData.name.trim().length < 2) {
+      setError('Name must be at least 2 characters long');
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Validate password strength (matches backend requirements)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{10,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must be at least 10 characters long and contain at least 1 uppercase letter, 1 lowercase letter, and 1 number');
+      setLoading(false);
+      return;
+    }
+
     // ✅ Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -34,23 +57,20 @@ function SignUp({ onSwitchToLogin }) {
       return;
     }
 
-    // ✅ Validate password length
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      setLoading(false);
-      return;
-    }
-
     try {
-      // ✅ Send only the fields your backend expects
+      // ✅ Send exactly what the backend DTO expects
       const signUpData = {
-        name: formData.name,
-        email: formData.email,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        // confirmPassword is only for frontend validation
+        confirmPassword: formData.confirmPassword, // Required by backend
       };
 
+      console.log('📤 Sending sign up data:', { ...signUpData, password: '***', confirmPassword: '***' });
+
       const response = await auth.signUp(signUpData);
+      
+      console.log('📥 Sign up response:', response);
       
       if (response.otpRequired && response.challengeId) {
         setChallengeId(response.challengeId);
@@ -64,7 +84,16 @@ function SignUp({ onSwitchToLogin }) {
       }
     } catch (err) {
       console.error('Sign up error:', err);
-      setError(err.message || 'Sign up failed. Please try again.');
+      // Handle different error formats
+      let errorMsg = 'Sign up failed. Please try again.';
+      if (err.message) {
+        errorMsg = Array.isArray(err.message) ? err.message.join(', ') : err.message;
+      } else if (err.error) {
+        errorMsg = err.error;
+      } else if (typeof err === 'string') {
+        errorMsg = err;
+      }
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -91,7 +120,13 @@ function SignUp({ onSwitchToLogin }) {
       }
     } catch (err) {
       console.error('OTP verification error:', err);
-      setError(err.message || 'OTP verification failed. Please try again.');
+      let errorMsg = 'OTP verification failed. Please try again.';
+      if (err.message) {
+        errorMsg = Array.isArray(err.message) ? err.message.join(', ') : err.message;
+      } else if (err.error) {
+        errorMsg = err.error;
+      }
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -102,9 +137,10 @@ function SignUp({ onSwitchToLogin }) {
     setError(null);
     try {
       const response = await auth.signUp({
-        name: formData.name,
-        email: formData.email,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
+        confirmPassword: formData.confirmPassword,
       });
       if (response.challengeId) {
         setChallengeId(response.challengeId);
@@ -116,6 +152,20 @@ function SignUp({ onSwitchToLogin }) {
       setLoading(false);
     }
   };
+
+  // Password strength indicator
+  const getPasswordStrength = (password) => {
+    let strength = 0;
+    if (password.length >= 10) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    return strength;
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
+  const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const strengthColors = ['', '#ff4444', '#ffaa44', '#44ff44', '#44aa44'];
 
   // OTP Verification Step
   if (step === 'otp') {
@@ -157,7 +207,7 @@ function SignUp({ onSwitchToLogin }) {
               type="text"
               placeholder="Enter 6-digit OTP"
               value={otp}
-              onChange={(e) => setOtp(e.target.value)}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
               maxLength="6"
               required
               style={{ textAlign: 'center', fontSize: '24px', letterSpacing: '8px' }}
@@ -240,7 +290,7 @@ function SignUp({ onSwitchToLogin }) {
           <input
             type="text"
             name="name"
-            placeholder="Enter your full name"
+            placeholder="Enter your full name (min 2 characters)"
             value={formData.name}
             onChange={handleChange}
             required
@@ -260,12 +310,38 @@ function SignUp({ onSwitchToLogin }) {
           <input
             type="password"
             name="password"
-            placeholder="Create a password (min 8 characters)"
+            placeholder="Min 10 chars with uppercase, lowercase & number"
             value={formData.password}
             onChange={handleChange}
-            minLength="8"
             required
           />
+          
+          {/* Password strength indicator */}
+          {formData.password && (
+            <div style={{ marginTop: '-10px', marginBottom: '15px' }}>
+              <div style={{
+                display: 'flex',
+                gap: '5px',
+                marginBottom: '4px'
+              }}>
+                {[1, 2, 3, 4].map((level) => (
+                  <div
+                    key={level}
+                    style={{
+                      flex: 1,
+                      height: '4px',
+                      background: level <= passwordStrength ? strengthColors[passwordStrength] : '#ddd',
+                      borderRadius: '2px',
+                      transition: 'background 0.3s'
+                    }}
+                  />
+                ))}
+              </div>
+              <span style={{ fontSize: '12px', color: strengthColors[passwordStrength] || '#666' }}>
+                {passwordStrength > 0 ? `Strength: ${strengthLabels[passwordStrength]}` : 'Enter a strong password'}
+              </span>
+            </div>
+          )}
 
           <label>Confirm Password</label>
           <input
@@ -274,9 +350,23 @@ function SignUp({ onSwitchToLogin }) {
             placeholder="Confirm your password"
             value={formData.confirmPassword}
             onChange={handleChange}
-            minLength="8"
             required
           />
+
+          {/* Password match indicator */}
+          {formData.confirmPassword && (
+            <div style={{ 
+              marginTop: '-10px', 
+              marginBottom: '15px',
+              fontSize: '14px',
+              color: formData.password === formData.confirmPassword ? '#3a3' : '#c33'
+            }}>
+              {formData.password === formData.confirmPassword ? 
+                '✅ Passwords match' : 
+                '❌ Passwords do not match'
+              }
+            </div>
+          )}
 
           <button type="submit" className="submit-btn" disabled={loading}>
             {loading ? 'Signing Up...' : 'Sign Up'}
