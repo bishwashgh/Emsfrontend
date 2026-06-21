@@ -8,6 +8,7 @@ function SignUp({ onSwitchToLogin }) {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '', // ✅ Add confirmPassword
   });
   const [otp, setOtp] = useState('');
   const [challengeId, setChallengeId] = useState('');
@@ -26,8 +27,30 @@ function SignUp({ onSwitchToLogin }) {
     setError(null);
     setSuccess(null);
 
+    // ✅ Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    // ✅ Validate password length
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await auth.signUp(formData);
+      // ✅ Send only the fields your backend expects
+      const signUpData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        // confirmPassword is only for frontend validation
+      };
+
+      const response = await auth.signUp(signUpData);
       
       if (response.otpRequired && response.challengeId) {
         setChallengeId(response.challengeId);
@@ -40,6 +63,7 @@ function SignUp({ onSwitchToLogin }) {
         }, 2000);
       }
     } catch (err) {
+      console.error('Sign up error:', err);
       setError(err.message || 'Sign up failed. Please try again.');
     } finally {
       setLoading(false);
@@ -60,13 +84,13 @@ function SignUp({ onSwitchToLogin }) {
 
       setSuccess('✅ Email verified! Account created successfully.');
       
-      // Auto-login after successful verification
       if (response.accessToken) {
         setTimeout(() => {
           window.location.href = '/dashboard';
         }, 1500);
       }
     } catch (err) {
+      console.error('OTP verification error:', err);
       setError(err.message || 'OTP verification failed. Please try again.');
     } finally {
       setLoading(false);
@@ -77,8 +101,11 @@ function SignUp({ onSwitchToLogin }) {
     setLoading(true);
     setError(null);
     try {
-      // Resend OTP logic (you may need to add this endpoint)
-      const response = await auth.signUp(formData);
+      const response = await auth.signUp({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
       if (response.challengeId) {
         setChallengeId(response.challengeId);
         setSuccess('✅ New OTP sent to your email.');
@@ -235,6 +262,17 @@ function SignUp({ onSwitchToLogin }) {
             name="password"
             placeholder="Create a password (min 8 characters)"
             value={formData.password}
+            onChange={handleChange}
+            minLength="8"
+            required
+          />
+
+          <label>Confirm Password</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm your password"
+            value={formData.confirmPassword}
             onChange={handleChange}
             minLength="8"
             required
