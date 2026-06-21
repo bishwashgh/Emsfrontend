@@ -45,9 +45,9 @@ function decodeJwt(token) {
 export const auth = {
   login: async (credentials) => {
     try {
-      const path = import.meta.env.VITE_AUTH_LOGIN_PATH || '/auth/login';
+      const path = import.meta.env.VITE_AUTH_LOGIN_PATH || '/authentication/sign-in';
       const res = await api.post(path, credentials);
-      const token = res.data.access_token || res.data.token || res.data.accessToken;
+      const token = res.data.accessToken || res.data.access_token || res.data.token || res.data.accessToken;
       if (token) localStorage.setItem('access_token', token);
       return res.data;
     } catch (err) {

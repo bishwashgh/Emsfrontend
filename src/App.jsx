@@ -5,7 +5,7 @@ import Signout from "./Signout.jsx";
 import { auth } from './services/api';
 
 function App() {
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -46,12 +46,12 @@ function App() {
 
     try {
       const res = await auth.login({
-        username: formData.username,
+        email: formData.email,
         password: formData.password,
       });
 
       // Accept multiple token shapes
-      const token = res.access_token || res.token || res.accessToken || (res.data && (res.data.access_token || res.data.token));
+      const token = res.accessToken || res.access_token || res.token || (res.data && (res.data.accessToken || res.data.access_token || res.data.token));
       const user = res.user || (res.data && res.data.user) || null;
 
       if (token) {
@@ -63,14 +63,13 @@ function App() {
           await fetchProfile();
         }
         setSuccess('✅ Login successful!');
-        setFormData({ username: '', password: '' });
+        setFormData({ email: '', password: '' });
         return;
       }
 
       setError('Login failed: unexpected response from server.');
     } catch (err) {
-      // unwrap error shapes
-      const message = err?.message || err?.error || (err?.message && String(err.message)) || JSON.stringify(err);
+      const message = (err && (err.message || err.error)) || JSON.stringify(err);
       setError(message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -131,7 +130,6 @@ function App() {
             parties, corporate events, and special occasions.
           </p>
           <button className="learn-btn">Learn More</button>
-          {/* Do NOT render Signout here (it caused auto-logout/mount issues) */}
         </div>
 
         <div className="right">
@@ -150,12 +148,12 @@ function App() {
             <form onSubmit={handleSubmit}>
               <h2>Login</h2>
 
-              <label>Username</label>
+              <label>Email</label>
               <input
-                type="text"
-                name="username"
-                placeholder="Enter username"
-                value={formData.username}
+                type="email"
+                name="email"
+                placeholder="Enter email"
+                value={formData.email}
                 onChange={handleChange}
                 required
               />
