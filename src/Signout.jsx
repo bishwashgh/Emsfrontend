@@ -1,16 +1,12 @@
-function Signout() {
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { auth } from './services/api';
 
-  const handleSignout = () => {
-    localStorage.removeItem("user");
-
-    alert("Signed out successfully");
-  };
-
-  return (
-    <button onClick={handleSignout}>
-      Sign Out
-    </button>
-  );
+export default function Signout() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    auth.logout();
+    navigate('/login');
+  }, []);
+  return null;
 }
-
-export default Signout;

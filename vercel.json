@@ -6,7 +6,7 @@
   "outputDirectory": "dist",
   "devCommand": "npm run dev",
   "env": {
-    "REACT_APP_API_URL": "https://eventmanagementsys.bishwasghimire.com.np:5000",
-    "REACT_APP_WS_URL": "wss://eventmanagementsys.bishwasghimire.com.np"
+    "VITE_API_URL": "https://ems.bishwasghimire.com.np/api",
+    "VITE_WS_URL": "wss://ems.bishwasghimire.com.np"
   }
 }

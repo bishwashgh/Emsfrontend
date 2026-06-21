@@ -1,61 +1,129 @@
-// src/services/api.js
 import axios from 'axios';
 
-// Your backend API URL
-const API_URL = 'https://ems.bishwasghimire.com.np/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const axiosInstance = axios.create({
-  baseURL: API_URL,
-  timeout: 30000,
+const api = axios.create({
+  baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
 });
 
-// Request interceptor - Add token if exists
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('authToken');
+// Attach token automatically
+api.interceptors.request.use((config) => {
+  try {
+    const token = localStorage.getItem('access_token');
     if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('📤 API Request:', config.method.toUpperCase(), config.url);
-    return config;
-  },
-  (error) => {
-    console.error('❌ Request Error:', error);
-    return Promise.reject(error);
+  } catch (e) {
+    // ignore
   }
-);
+  return config;
+});
 
-// Response interceptor
-axiosInstance.interceptors.response.use(
-  (response) => {
-    console.log('📥 API Response:', response.status, response.config.url);
-    return response;
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      window.location.href = '/';
+// Simple error unwrap
+function unwrapError(err) {
+  if (err?.response?.data) return err.response.data;
+  return { message: err.message || 'Unknown error' };
+}
+
+// Auth helpers
+export const auth = {
+  // adjust LOGIN_PATH if backend differs
+  login: async (credentials) => {
+    try {
+      const path = import.meta.env.VITE_AUTH_LOGIN_PATH || '/auth/login';
+      const res = await api.post(path, credentials);
+      // backend may return { access_token } or { token }
+      const token = res.data.access_token || res.data.token || res.data.accessToken;
+      if (token) localStorage.setItem('access_token', token);
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
     }
-    return Promise.reject(error);
-  }
-);
-
-export const apiService = {
-  login: (data) => axiosInstance.post('/auth/login', data),
-  register: (data) => axiosInstance.post('/auth/register', data),
-  logout: () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
   },
-  getProfile: () => axiosInstance.get('/auth/profile'),
-  getEvents: () => axiosInstance.get('/events'),
-  createEvent: (data) => axiosInstance.post('/events', data),
-  health: () => axiosInstance.get('/health'),
+  logout: () => {
+    localStorage.removeItem('access_token');
+  },
+  getToken: () => localStorage.getItem('access_token'),
 };
 
-export default apiService;
+// Booking helpers
+export const bookings = {
+  create: async (payload) => {
+    try {
+      const res = await api.post('/bookings', payload);
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+  get: async (id) => {
+    try {
+      const res = await api.get(`/bookings/${id}`);
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+};
+
+// Venues
+export const venues = {
+  list: async () => {
+    try {
+      const res = await api.get('/venue');
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+  get: async (id) => {
+    try {
+      const res = await api.get(`/venue/${id}`);
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+};
+
+// Users (ADMIN guarded where appropriate)
+export const users = {
+  list: async () => {
+    try {
+      const res = await api.get('/users');
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+  get: async (id) => {
+    try {
+      const res = await api.get(`/users/${id}`);
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+  update: async (id, payload) => {
+    try {
+      const res = await api.patch(`/users/${id}`, payload);
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+  remove: async (id) => {
+    try {
+      const res = await api.delete(`/users/${id}`);
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+};
+
+export default api;
