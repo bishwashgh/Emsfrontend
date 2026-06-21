@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import "./beuti.css";
 import Signout from "./Signout.jsx";
-import apiService from './services/api';
+import { auth } from './services/api';
 
 function App() {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -14,20 +14,24 @@ function App() {
 
   // Check login status on mount
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('access_token');
     if (token) {
       setIsLoggedIn(true);
       fetchProfile();
     }
-    console.log('🚀 App Connected to:', 'https://ems.bishwasghimire.com.np/api');
+    console.log('🚀 App Connected to:', import.meta.env.VITE_API_URL || 'http://localhost:3000');
   }, []);
 
   const fetchProfile = async () => {
     try {
-      const res = await apiService.getProfile();
-      setUserData(res.data);
+      const user = await auth.getProfile();
+      setUserData(user);
     } catch (err) {
       console.error('Profile fetch failed:', err);
+      // if token invalid, clear it
+      auth.logout();
+      setIsLoggedIn(false);
+      setUserData(null);
     }
   };
 
@@ -42,28 +46,47 @@ function App() {
     setSuccess(null);
 
     try {
-      const res = await apiService.login({
+      const res = await auth.login({
         username: formData.username,
         password: formData.password,
       });
 
-      if (res.data.token) {
-        localStorage.setItem('authToken', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user));
+      // Many backends return { access_token, user } or { token, user }
+      const token = res.access_token || res.token || res.accessToken;
+      const user = res.user || null;
+
+      if (token) {
+        // token already stored by auth.login
         setIsLoggedIn(true);
-        setUserData(res.data.user);
+        if (user) {
+          setUserData(user);
+        } else {
+          await fetchProfile(); // try to fetch from backend using token
+        }
         setSuccess('✅ Login successful!');
         setFormData({ username: '', password: '' });
+        return;
+      }
+
+      // if backend returned response wrapped in res.data (older code path)
+      if (res?.data?.token) {
+        localStorage.setItem('access_token', res.data.token);
+        setIsLoggedIn(true);
+        setUserData(res.data.user || null);
+        setSuccess('✅ Login successful!');
+        setFormData({ username: '', password: '' });
+      } else {
+        setError('Login failed: unexpected response');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(err.message || err?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = () => {
-    apiService.logout();
+    auth.logout();
     setIsLoggedIn(false);
     setUserData(null);
     setSuccess(null);
@@ -77,7 +100,7 @@ function App() {
         <div className="card">
           <div className="left">
             <div className="logo"></div>
-            <h1>Welcome, {userData?.username || 'User'}!</h1>
+            <h1>Welcome, {userData?.username || userData?.name || 'User'}!</h1>
             <div className="line"></div>
             <p>You are logged in to the Event Management System.</p>
             <button className="learn-btn">Dashboard</button>
@@ -88,7 +111,7 @@ function App() {
               <h2>Profile</h2>
               {userData && (
                 <div style={{ textAlign: 'left', padding: '10px' }}>
-                  <p><strong>Username:</strong> {userData.username}</p>
+                  <p><strong>Username:</strong> {userData.username || userData.name}</p>
                   <p><strong>Email:</strong> {userData.email || 'N/A'}</p>
                   <p><strong>Role:</strong> {userData.role || 'User'}</p>
                 </div>
