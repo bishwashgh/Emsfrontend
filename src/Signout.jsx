@@ -1,12 +1,18 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/Signout.jsx
+import React from 'react';
 import { auth } from './services/api';
 
-export default function Signout() {
-  const navigate = useNavigate();
-  useEffect(() => {
+export default function Signout({ onLogout }) {
+  const handleSignout = () => {
     auth.logout();
-    navigate('/login');
-  }, []);
-  return null;
+    if (typeof onLogout === 'function') onLogout();
+    // Optionally redirect:
+    // window.location.href = '/'; // if you want a hard redirect
+  };
+
+  return (
+    <button className="signout-btn" onClick={handleSignout}>
+      Sign out
+    </button>
+  );
 }

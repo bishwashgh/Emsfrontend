@@ -12,7 +12,6 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
 
-  // Check login status on mount
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (token) {
@@ -28,7 +27,7 @@ function App() {
       setUserData(user);
     } catch (err) {
       console.error('Profile fetch failed:', err);
-      // if token invalid, clear it
+      // Clear invalid token and update UI
       auth.logout();
       setIsLoggedIn(false);
       setUserData(null);
@@ -51,35 +50,28 @@ function App() {
         password: formData.password,
       });
 
-      // Many backends return { access_token, user } or { token, user }
-      const token = res.access_token || res.token || res.accessToken;
-      const user = res.user || null;
+      // Accept multiple token shapes
+      const token = res.access_token || res.token || res.accessToken || (res.data && (res.data.access_token || res.data.token));
+      const user = res.user || (res.data && res.data.user) || null;
 
       if (token) {
-        // token already stored by auth.login
+        // auth.login already stores token in localStorage
         setIsLoggedIn(true);
         if (user) {
           setUserData(user);
         } else {
-          await fetchProfile(); // try to fetch from backend using token
+          await fetchProfile();
         }
         setSuccess('✅ Login successful!');
         setFormData({ username: '', password: '' });
         return;
       }
 
-      // if backend returned response wrapped in res.data (older code path)
-      if (res?.data?.token) {
-        localStorage.setItem('access_token', res.data.token);
-        setIsLoggedIn(true);
-        setUserData(res.data.user || null);
-        setSuccess('✅ Login successful!');
-        setFormData({ username: '', password: '' });
-      } else {
-        setError('Login failed: unexpected response');
-      }
+      setError('Login failed: unexpected response from server.');
     } catch (err) {
-      setError(err.message || err?.message || 'Login failed. Please try again.');
+      // unwrap error shapes
+      const message = err?.message || err?.error || (err?.message && String(err.message)) || JSON.stringify(err);
+      setError(message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -93,7 +85,7 @@ function App() {
     setError(null);
   };
 
-  // Dashboard view when logged in
+  // Logged-in dashboard
   if (isLoggedIn) {
     return (
       <div className="container">
@@ -106,15 +98,18 @@ function App() {
             <button className="learn-btn">Dashboard</button>
             <Signout onLogout={handleLogout} />
           </div>
+
           <div className="right">
             <div className="login-box">
               <h2>Profile</h2>
-              {userData && (
+              {userData ? (
                 <div style={{ textAlign: 'left', padding: '10px' }}>
                   <p><strong>Username:</strong> {userData.username || userData.name}</p>
                   <p><strong>Email:</strong> {userData.email || 'N/A'}</p>
                   <p><strong>Role:</strong> {userData.role || 'User'}</p>
                 </div>
+              ) : (
+                <p>Loading profile...</p>
               )}
             </div>
           </div>
@@ -123,7 +118,7 @@ function App() {
     );
   }
 
-  // Login view
+  // Login view (Signout removed to avoid auto-logout)
   return (
     <div className="container">
       <div className="card">
@@ -136,7 +131,7 @@ function App() {
             parties, corporate events, and special occasions.
           </p>
           <button className="learn-btn">Learn More</button>
-          <Signout onLogout={handleLogout} />
+          {/* Do NOT render Signout here (it caused auto-logout/mount issues) */}
         </div>
 
         <div className="right">
