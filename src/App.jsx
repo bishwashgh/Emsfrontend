@@ -18,7 +18,7 @@ function App() {
       setIsLoggedIn(true);
       fetchProfile();
     }
-    console.log('🚀 App Connected to:', import.meta.env.VITE_API_URL || 'http://localhost:3000');
+    console.log('🚀 App Connected to:', import.meta.env.VITE_API_URL || 'https://ems.bishwasghimire.com.np');
   }, []);
 
   const fetchProfile = async () => {
@@ -27,7 +27,6 @@ function App() {
       setUserData(user);
     } catch (err) {
       console.error('Profile fetch failed:', err);
-      // Clear invalid token and update UI
       auth.logout();
       setIsLoggedIn(false);
       setUserData(null);
@@ -45,39 +44,36 @@ function App() {
     setSuccess(null);
 
     try {
-      const res = await auth.login({
+      // ✅ Use signIn method
+      const res = await auth.signIn({
         email: formData.email,
         password: formData.password,
       });
 
-      // Accept multiple token shapes
-      const token = res.accessToken || res.access_token || res.token || (res.data && (res.data.accessToken || res.data.access_token || res.data.token));
-      const user = res.user || (res.data && res.data.user) || null;
+      console.log('✅ Sign in response:', res);
 
-      if (token) {
-        // auth.login already stores token in localStorage
+      // Check if login was successful
+      if (res.accessToken || res.access_token || res.token) {
         setIsLoggedIn(true);
-        if (user) {
-          setUserData(user);
-        } else {
-          await fetchProfile();
-        }
         setSuccess('✅ Login successful!');
         setFormData({ email: '', password: '' });
+        
+        // Fetch user data
+        await fetchProfile();
         return;
       }
 
       setError('Login failed: unexpected response from server.');
     } catch (err) {
-      const message = (err && (err.message || err.error)) || JSON.stringify(err);
-      setError(message || 'Login failed. Please try again.');
+      console.error('Login error:', err);
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    auth.logout();
+  const handleLogout = async () => {
+    await auth.logout();
     setIsLoggedIn(false);
     setUserData(null);
     setSuccess(null);
@@ -91,7 +87,7 @@ function App() {
         <div className="card">
           <div className="left">
             <div className="logo"></div>
-            <h1>Welcome, {userData?.username || userData?.name || 'User'}!</h1>
+            <h1>Welcome, {userData?.email || userData?.sub || 'User'}!</h1>
             <div className="line"></div>
             <p>You are logged in to the Event Management System.</p>
             <button className="learn-btn">Dashboard</button>
@@ -103,8 +99,7 @@ function App() {
               <h2>Profile</h2>
               {userData ? (
                 <div style={{ textAlign: 'left', padding: '10px' }}>
-                  <p><strong>Username:</strong> {userData.username || userData.name}</p>
-                  <p><strong>Email:</strong> {userData.email || 'N/A'}</p>
+                  <p><strong>Email:</strong> {userData.email || userData.sub || 'N/A'}</p>
                   <p><strong>Role:</strong> {userData.role || 'User'}</p>
                 </div>
               ) : (
@@ -117,7 +112,7 @@ function App() {
     );
   }
 
-  // Login view (Signout removed to avoid auto-logout)
+  // Login view
   return (
     <div className="container">
       <div className="card">

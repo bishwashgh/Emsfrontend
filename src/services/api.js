@@ -1,8 +1,8 @@
 // src/services/api.js
 import axios from 'axios';
 
-// ✅ FIX: Add /api to the base URL
-const API_BASE = import.meta.env.VITE_API_URL || 'https://ems.bishwasghimire.com.np/api';
+// Your backend API base URL
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ems.bishwasghimire.com.np';
 
 console.log('🚀 API Base URL:', API_BASE);
 
@@ -11,7 +11,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important for CORS
+  withCredentials: true,
 });
 
 // Request interceptor - Attach token
@@ -42,6 +42,7 @@ api.interceptors.response.use(
       // Handle 401 Unauthorized
       if (error.response.status === 401) {
         localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         window.location.href = '/';
       }
@@ -71,56 +72,121 @@ function decodeJwt(token) {
 }
 
 export const auth = {
-  // ✅ FIX: Use /auth/login instead of /authentication/sign-in
-  login: async (credentials) => {
+  // ✅ Sign Up - matches your backend route
+  signUp: async (userData) => {
     try {
-      const path = import.meta.env.VITE_AUTH_LOGIN_PATH || '/auth/login';
-      console.log('📤 Login request to:', `${API_BASE}${path}`);
+      const res = await api.post('/authentication/sign-up', userData);
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+
+  // ✅ Sign In - matches your backend route
+  signIn: async (credentials) => {
+    try {
+      console.log('📤 Sign in request for:', credentials.email);
+      const res = await api.post('/authentication/sign-in', credentials);
+      console.log('📥 Sign in response:', res.data);
       
-      const res = await api.post(path, credentials);
-      console.log('📥 Login response:', res.data);
-      
+      // Store tokens based on your backend response
       const token = res.data.accessToken || res.data.access_token || res.data.token;
+      const refreshToken = res.data.refreshToken || res.data.refresh_token;
+      
       if (token) {
         localStorage.setItem('access_token', token);
+        if (refreshToken) {
+          localStorage.setItem('refresh_token', refreshToken);
+        }
         if (res.data.user) {
           localStorage.setItem('user', JSON.stringify(res.data.user));
         }
       }
       return res.data;
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('Sign in error:', err);
       throw unwrapError(err);
     }
   },
-  
-  logout: () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user');
-    window.location.href = '/';
+
+  // ✅ Refresh Tokens
+  refreshTokens: async (refreshTokenDto) => {
+    try {
+      const res = await api.post('/authentication/refresh-tokens', refreshTokenDto);
+      const token = res.data.accessToken || res.data.access_token;
+      if (token) {
+        localStorage.setItem('access_token', token);
+      }
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
   },
-  
+
+  // ✅ Verify Sign Up OTP
+  verifySignUpOtp: async (otpData) => {
+    try {
+      const res = await api.post('/authentication/sign-up/verify', otpData);
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+
+  // ✅ Two Factor Authentication
+  twoFactor: async () => {
+    try {
+      const res = await api.post('/authentication/twofactor');
+      return res.data;
+    } catch (err) {
+      throw unwrapError(err);
+    }
+  },
+
+  // ✅ Logout from current device
+  logout: async () => {
+    try {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        await api.post('/authentication/logout', { refreshToken });
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+  },
+
+  // ✅ Logout from all devices
+  logoutAll: async () => {
+    try {
+      await api.post('/authentication/logout-all');
+    } catch (err) {
+      console.error('Logout all error:', err);
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+  },
+
   getToken: () => localStorage.getItem('access_token'),
+  
+  getRefreshToken: () => localStorage.getItem('refresh_token'),
 
   getProfile: async () => {
     try {
       const token = localStorage.getItem('access_token');
       if (!token) throw { message: 'No access token' };
       
-      // Try to get profile from /auth/profile first
-      try {
-        const res = await api.get('/auth/profile');
-        return res.data;
-      } catch (profileError) {
-        // Fallback: decode token and get user by ID
-        const payload = decodeJwt(token);
-        const userId = payload?.sub || payload?.id;
-        if (userId) {
-          const res = await api.get(`/users/${userId}`);
-          return res.data;
-        }
-        throw { message: 'Invalid token payload' };
-      }
+      // Try to get profile - you might need to add this endpoint
+      // For now, decode token
+      const payload = decodeJwt(token);
+      return payload;
     } catch (err) {
       throw unwrapError(err);
     }
