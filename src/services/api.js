@@ -49,7 +49,6 @@ export const auth = {
       const res = await api.post(path, credentials);
       const token = res.data.access_token || res.data.token || res.data.accessToken;
       if (token) localStorage.setItem('access_token', token);
-      // if backend returns user object, return it
       return res.data;
     } catch (err) {
       throw unwrapError(err);
@@ -76,7 +75,6 @@ export const auth = {
   },
 };
 
-// bookings, venues, users unchanged
 export const bookings = {
   create: async (payload) => {
     try {
