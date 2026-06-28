@@ -8,6 +8,7 @@ interface AuthContextValue {
   isAuthenticated: boolean
   isAdmin: boolean
   signIn: (email: string, password: string) => Promise<void>
+  signInWithGoogle: (googleToken: string) => Promise<void>
   signUp: (name: string, email: string, password: string, confirmPassword: string) => Promise<{ otpRequired: boolean; challengeId: string }>
   verifyOtp: (challengeId: string, otp: string) => Promise<void>
   resendOtp: (challengeId: string) => Promise<void>
@@ -37,60 +38,86 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { loadUser() }, [loadUser])
 
-  // AuthContext.tsx - signIn method
-const signIn = useCallback(async (email: string, password: string) => {
-  try {
-    console.log('🔑 Signing in with:', email);
-    
-    const res = await api.post<{ accessToken: string; refreshToken?: string; user?: User }>(
-      '/authentication/sign-in', 
-      { email, password }
-    );
-    
-    console.log('📥 Response received:', res.data);
-    
-    // ✅ IMPORTANT: Save the token
-    const { accessToken, refreshToken, user } = res.data;
-    
-    if (!accessToken) {
-      throw new Error('No access token received');
+  const signIn = useCallback(async (email: string, password: string) => {
+    try {
+      console.log('🔑 Signing in with:', email);
+      
+      const res = await api.post<{ accessToken: string; refreshToken?: string; user?: User }>(
+        '/authentication/sign-in', 
+        { email, password }
+      );
+      
+      console.log('📥 Response received:', res.data);
+      
+      const { accessToken, refreshToken, user } = res.data;
+      
+      if (!accessToken) {
+        throw new Error('No access token received');
+      }
+      
+      tokenStorage.set(accessToken, refreshToken);
+      console.log('💾 Token saved to localStorage');
+      
+      const saved = tokenStorage.getAccessToken();
+      console.log('🔑 Saved token:', saved ? '✅ Yes' : '❌ No');
+      
+      if (user) {
+        setUser(user);
+      } else {
+        await loadUser();
+      }
+      
+    } catch (error) {
+      console.error('❌ SignIn error:', error);
+      throw error;
     }
-    
-    // ✅ Store tokens in localStorage
-    tokenStorage.set(accessToken, refreshToken);
-    console.log('💾 Token saved to localStorage');
-    
-    // ✅ Verify it was saved
-    const saved = tokenStorage.getAccessToken();
-    console.log('🔑 Saved token:', saved ? '✅ Yes' : '❌ No');
-    
-    // ✅ Set user
-    if (user) {
-      setUser(user);
-    } else {
-      await loadUser();
+  }, [loadUser]);
+
+  // ✅ NEW: Google Sign-In
+  const signInWithGoogle = useCallback(async (googleToken: string) => {
+    try {
+      console.log('🔑 Signing in with Google');
+      
+      const res = await api.post<{ accessToken: string; refreshToken?: string; user?: User }>(
+        '/authentication/google',
+        { token: googleToken }
+      );
+      
+      console.log('📥 Google auth response received:', res.data);
+      
+      const { accessToken, refreshToken, user } = res.data;
+      
+      if (!accessToken) {
+        throw new Error('No access token received');
+      }
+      
+      tokenStorage.set(accessToken, refreshToken);
+      console.log('💾 Google token saved to localStorage');
+      
+      if (user) {
+        setUser(user);
+      } else {
+        await loadUser();
+      }
+      
+    } catch (error) {
+      console.error('❌ Google SignIn error:', error);
+      throw error;
     }
-    
-  } catch (error) {
-    console.error('❌ SignIn error:', error);
-    throw error;
-  }
-}, [loadUser]);
+  }, [loadUser]);
 
   const signUp = useCallback(async (name: string, email: string, password: string, confirmPassword: string) => {
     const res = await api.post<{ otpRequired: boolean; challengeId: string }>(
       '/authentication/sign-up', 
       { name, email, password, confirmPassword }
     )
-    return res.data // { otpRequired: true, challengeId: '...' }
+    return res.data
   }, [])
 
-  // Add verifyOtp method
   const verifyOtp = useCallback(async (challengeId: string, otp: string) => {
     await api.post('/authentication/sign-up/verify', { challengeId, otp })
   }, [])
 
-  // Add resendOtp method
   const resendOtp = useCallback(async (challengeId: string) => {
     await api.post('/authentication/resend-otp', { challengeId })
   }, [])
@@ -108,13 +135,14 @@ const signIn = useCallback(async (email: string, password: string) => {
       isAuthenticated: !!user, 
       isAdmin: user?.role === 'ADMIN', 
       signIn, 
+      signInWithGoogle,
       signUp, 
       verifyOtp,
       resendOtp,
       signOut, 
       refreshUser: loadUser 
     }),
-    [user, loading, signIn, signUp, verifyOtp, resendOtp, signOut, loadUser],
+    [user, loading, signIn, signInWithGoogle, signUp, verifyOtp, resendOtp, signOut, loadUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
