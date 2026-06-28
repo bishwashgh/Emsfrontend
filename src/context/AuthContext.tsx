@@ -73,21 +73,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadUser]);
 
-  // ✅ NEW: Google Sign-In
   const signInWithGoogle = useCallback(async (googleToken: string) => {
     try {
       console.log('🔑 Signing in with Google');
+      console.log('📤 Google token (first 20 chars):', googleToken.substring(0, 20) + '...');
+      console.log('📤 Google token length:', googleToken.length);
       
       const res = await api.post<{ accessToken: string; refreshToken?: string; user?: User }>(
         '/authentication/google',
         { token: googleToken }
       );
       
-      console.log('📥 Google auth response received:', res.data);
+      console.log('📥 Google auth response status:', res.status);
+      console.log('📥 Google auth response data:', res.data);
+      
+      if (!res.data) {
+        console.error('❌ No data in response');
+        throw new Error('No response data received');
+      }
       
       const { accessToken, refreshToken, user } = res.data;
       
+      console.log('📊 Extracted from response:');
+      console.log('  - accessToken:', accessToken ? '✅ Present' : '❌ Missing');
+      console.log('  - refreshToken:', refreshToken ? '✅ Present' : '❌ Missing');
+      console.log('  - user:', user ? '✅ Present' : '❌ Missing');
+      
       if (!accessToken) {
+        console.error('❌ No access token in response. Full response:', res.data);
         throw new Error('No access token received');
       }
       
@@ -95,13 +108,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('💾 Google token saved to localStorage');
       
       if (user) {
+        console.log('👤 User set from response:', user);
         setUser(user);
       } else {
+        console.log('👤 No user in response, loading user...');
         await loadUser();
       }
       
-    } catch (error) {
+      console.log('✅ Google sign-in completed successfully');
+      
+    } catch (error: unknown) {
       console.error('❌ Google SignIn error:', error);
+      
+      // Type guard to safely access error properties
+      if (error && typeof error === 'object' && 'response' in error) {
+        const errorResponse = error as { response: { data: unknown; status: number; headers: unknown } };
+        console.error('📥 Error response data:', errorResponse.response.data);
+        console.error('📥 Error response status:', errorResponse.response.status);
+        console.error('📥 Error response headers:', errorResponse.response.headers);
+      }
+      
       throw error;
     }
   }, [loadUser]);
