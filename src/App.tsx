@@ -14,6 +14,7 @@ import PaymentReturnPage from './pages/PaymentReturnPage'
 import AdminVenuesPage from './pages/admin/AdminVenuesPage'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
 import NotFoundPage from './pages/NotFoundPage'
+import VerifyOtpPage from './pages/VerifyOtpPage'
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/venues/:id" element={<VenueDetailPage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/verify-otp" element={<VerifyOtpPage/>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
           <Route path="/venues/:id/book" element={<ProtectedRoute><BookingFlowPage /></ProtectedRoute>} />

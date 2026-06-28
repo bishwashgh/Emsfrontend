@@ -1,75 +1,259 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
+import React, { useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export function Navbar() {
-  const { isAuthenticated, isAdmin, user, signOut } = useAuth()
-  const navigate = useNavigate()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const { isAuthenticated, isAdmin, user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleSignOut = async () => { await signOut(); navigate('/') }
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const navLink = ({ isActive }: { isActive: boolean }) =>
-    `text-sm font-medium transition-colors ${isActive ? 'text-primary-600' : 'text-slate-600 hover:text-slate-900'}`
+    `text-sm font-medium transition-colors ${
+      isActive ? 'text-amber-700' : 'text-stone-600 hover:text-stone-900'
+    }`;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-      <nav className="container-app flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          </span>
-          <span className="font-display text-lg font-bold text-slate-900">Eventify</span>
+    <header className="sticky top-0 z-40 border-b border-amber-200/30 bg-gradient-to-r from-amber-50/95 via-orange-50/95 to-amber-50/95 backdrop-blur-md shadow-sm">
+      <nav className="container-app flex h-[76px] items-center justify-between">
+        {/* Brand / Logo */}
+        <Link to="/" className="flex items-center gap-3 flex-shrink-0">
+          <div className="relative flex h-[46px] w-[46px] items-center justify-center rounded-full bg-gradient-to-br from-red-700 to-amber-600 shadow-lg shadow-red-900/30 ring-2 ring-amber-600/20">
+            <div className="absolute inset-1 rounded-full border border-white/25"></div>
+            <svg className="h-6 w-6 text-white drop-shadow-sm" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C12 2 8 6 8 11C8 16 12 22 12 22C12 22 16 16 16 11C16 6 12 2 12 2ZM9.5 12C9.5 8.5 11 5.5 12 4C13 5.5 14.5 8.5 14.5 12C14.5 15.5 13 18.5 12 20C11 18.5 9.5 15.5 9.5 12Z" />
+              <path d="M7 14C7 14 2 12 2 8C2 4 7 2 7 2C7 2 5.5 5.5 6 9C6.5 12.5 8.5 14.5 10 16C8.5 15.5 7 14 7 14Z" />
+              <path d="M17 14C17 14 22 12 22 8C22 4 17 2 17 2C17 2 18.5 5.5 18 9C17.5 12.5 15.5 14.5 14 16C15.5 15.5 17 14 17 14Z" />
+            </svg>
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="bg-gradient-to-r from-red-800 via-amber-700 to-amber-600 bg-clip-text text-[22px] font-extrabold tracking-tight text-transparent">
+              Eventify
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-[2px] text-amber-700/85">
+              Sacred Celebrations
+            </span>
+          </div>
         </Link>
 
-        <div className="hidden items-center gap-7 md:flex">
-          <NavLink to="/venues" className={navLink}>Venues</NavLink>
-          {isAuthenticated && <NavLink to="/bookings" className={navLink}>My Bookings</NavLink>}
-          {isAdmin && <NavLink to="/admin/venues" className={navLink}>Manage</NavLink>}
+        {/* Ornament */}
+        <div className="hidden items-center gap-2 text-amber-600/40 md:flex">
+          <div className="h-px w-7 bg-gradient-to-r from-transparent to-amber-600/50"></div>
+          <div className="h-1.5 w-1.5 rotate-45 bg-amber-600/50"></div>
+          <div className="h-px w-7 bg-gradient-to-l from-transparent to-amber-600/50"></div>
         </div>
 
-        <div className="hidden items-center gap-3 md:flex">
-          {isAuthenticated ? (
-            <div className="flex items-center gap-3">
-              <Link to="/profile" className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-100">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700">
-                  {user?.name?.charAt(0).toUpperCase() ?? 'U'}
-                </span>
-                <span className="text-sm font-medium text-slate-700">{user?.name?.split(' ')[0]}</span>
-              </Link>
-              <button onClick={handleSignOut} className="btn-secondary">Sign out</button>
-            </div>
-          ) : (
+        {/* Desktop Navigation Links */}
+        <div className="hidden items-center gap-1 md:flex">
+          <NavLink to="/venues" className={navLink}>
+            <span className="flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Venues
+            </span>
+          </NavLink>
+          
+          <span className="mx-1.5 h-1.5 w-1.5 rounded-full bg-amber-600/30"></span>
+          
+          <NavLink to="/events" className={navLink}>
+            <span className="flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Events
+            </span>
+          </NavLink>
+          
+          <span className="mx-1.5 h-1.5 w-1.5 rounded-full bg-amber-600/30"></span>
+          
+          <NavLink to="/gallery" className={navLink}>
+            <span className="flex items-center gap-1.5">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+              Gallery
+            </span>
+          </NavLink>
+
+          {isAuthenticated && (
             <>
-              <Link to="/sign-in" className="btn-ghost">Sign in</Link>
-              <Link to="/sign-up" className="btn-primary">Get started</Link>
+              <span className="mx-1.5 h-1.5 w-1.5 rounded-full bg-amber-600/30"></span>
+              <NavLink to="/bookings" className={navLink}>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  My Bookings
+                </span>
+              </NavLink>
+            </>
+          )}
+
+          {isAdmin && (
+            <>
+              <span className="mx-1.5 h-1.5 w-1.5 rounded-full bg-amber-600/30"></span>
+              <NavLink to="/admin/venues" className={navLink}>
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  Manage
+                </span>
+              </NavLink>
             </>
           )}
         </div>
 
-        <button className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu">
+        {/* Desktop Auth Section */}
+        <div className="hidden items-center gap-2 md:flex">
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2">
+              {/* Notification Bell */}
+              <button className="relative flex h-9 w-9 items-center justify-center rounded-full border border-amber-600/20 bg-white/80 shadow-sm hover:bg-amber-50">
+                <svg className="h-4 w-4 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-600 ring-2 ring-white"></span>
+              </button>
+
+              <div className="h-6 w-px bg-gradient-to-b from-transparent via-amber-600/30 to-transparent"></div>
+
+              {/* User Pill */}
+              <Link to="/profile" className="flex items-center gap-2.5 rounded-full border border-amber-600/25 bg-gradient-to-r from-white/90 to-amber-50/80 px-3 py-1.5 pr-3.5 shadow-sm transition-colors hover:bg-amber-50">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-600 to-amber-700 text-sm font-extrabold text-white shadow-md shadow-amber-600/30">
+                  {user?.name?.charAt(0).toUpperCase() ?? 'U'}
+                </div>
+                <div className="flex flex-col leading-none">
+                  <span className="text-sm font-bold text-stone-700">{user?.name?.split(' ')[0]}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+                    {isAdmin ? 'Admin' : 'Member'}
+                  </span>
+                </div>
+                {isAdmin && (
+                  <span className="ml-1 flex items-center gap-1 rounded-full bg-red-50/80 px-2 py-0.5 text-[10px] font-bold uppercase text-red-700 ring-1 ring-red-200">
+                    <svg className="h-2.5 w-2.5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Admin
+                  </span>
+                )}
+                <svg className="h-3.5 w-3.5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </Link>
+
+              <button onClick={handleSignOut} className="btn-ghost-danger">
+                <svg className="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link to="/sign-in" className="btn-ghost">
+                <svg className="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Sign in
+              </Link>
+              <Link to="/sign-up" className="btn-primary">
+                <svg className="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Book Now
+              </Link>
+            </>
+          )}
+        </div>
+
+        {/* Mobile Menu Toggle */}
+        <button
+          className="rounded-lg p-2 text-stone-600 hover:bg-stone-100 md:hidden"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="Menu"
+        >
           <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d={menuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'} />
           </svg>
         </button>
       </nav>
 
+      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden">
-          <div className="flex flex-col gap-3">
-            <NavLink to="/venues" className={navLink} onClick={() => setMenuOpen(false)}>Venues</NavLink>
-            {isAuthenticated && <NavLink to="/bookings" className={navLink} onClick={() => setMenuOpen(false)}>My Bookings</NavLink>}
-            {isAdmin && <NavLink to="/admin/venues" className={navLink} onClick={() => setMenuOpen(false)}>Manage</NavLink>}
-            <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-3">
+        <div className="border-t border-amber-200/30 bg-white px-4 py-4 shadow-lg md:hidden">
+          <div className="flex flex-col gap-2">
+            <NavLink to="/venues" className={navLink} onClick={() => setMenuOpen(false)}>
+              <span className="flex items-center gap-2">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Venues
+              </span>
+            </NavLink>
+            <NavLink to="/events" className={navLink} onClick={() => setMenuOpen(false)}>
+              <span className="flex items-center gap-2">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Events
+              </span>
+            </NavLink>
+            <NavLink to="/gallery" className={navLink} onClick={() => setMenuOpen(false)}>
+              <span className="flex items-center gap-2">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                Gallery
+              </span>
+            </NavLink>
+            {isAuthenticated && (
+              <>
+                <NavLink to="/bookings" className={navLink} onClick={() => setMenuOpen(false)}>
+                  <span className="flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    My Bookings
+                  </span>
+                </NavLink>
+              </>
+            )}
+            {isAdmin && (
+              <NavLink to="/admin/venues" className={navLink} onClick={() => setMenuOpen(false)}>
+                <span className="flex items-center gap-2">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  Manage
+                </span>
+              </NavLink>
+            )}
+            <div className="mt-3 flex flex-col gap-2 border-t border-stone-200 pt-3">
               {isAuthenticated ? (
                 <>
-                  <Link to="/profile" className="btn-secondary" onClick={() => setMenuOpen(false)}>Profile</Link>
-                  <button onClick={handleSignOut} className="btn-secondary">Sign out</button>
+                  <Link to="/profile" className="btn-secondary" onClick={() => setMenuOpen(false)}>
+                    Profile
+                  </Link>
+                  <button onClick={handleSignOut} className="btn-secondary">
+                    Sign out
+                  </button>
                 </>
               ) : (
                 <>
-                  <Link to="/sign-in" className="btn-secondary" onClick={() => setMenuOpen(false)}>Sign in</Link>
-                  <Link to="/sign-up" className="btn-primary" onClick={() => setMenuOpen(false)}>Get started</Link>
+                  <Link to="/sign-in" className="btn-secondary" onClick={() => setMenuOpen(false)}>
+                    Sign in
+                  </Link>
+                  <Link to="/sign-up" className="btn-primary" onClick={() => setMenuOpen(false)}>
+                    Book Now
+                  </Link>
                 </>
               )}
             </div>
@@ -77,5 +261,5 @@ export function Navbar() {
         </div>
       )}
     </header>
-  )
+  );
 }

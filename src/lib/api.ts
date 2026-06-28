@@ -2,7 +2,7 @@ import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import type { ApiError } from '../types'
 
 export const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:3000'
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:5000'
 
 export const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
@@ -27,11 +27,20 @@ export const tokenStorage = {
   },
 }
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = tokenStorage.getAccessToken()
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
+// ✅ Request interceptor - Add token to every request
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = tokenStorage.getAccessToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+      console.log(`✅ Auth header added for ${config.url}`)
+    } else {
+      console.log(`⚠️ No token for ${config.url}`)
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
 let isRefreshing = false
 let refreshPromise: Promise<string | null> | null = null
@@ -40,7 +49,7 @@ async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = tokenStorage.getRefreshToken()
   if (!refreshToken) return null
   try {
-    const res = await axios.post(`${API_BASE_URL}/api/auth/refresh-tokens`, { refreshToken })
+    const res = await axios.post(`${API_BASE_URL}/api/authentication/refresh-tokens`, { refreshToken })
     const { accessToken, refreshToken: newRefresh } = res.data
     tokenStorage.set(accessToken, newRefresh)
     return accessToken
@@ -54,7 +63,7 @@ api.interceptors.response.use(
   (res) => res,
   async (error: AxiosError) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
-    if (error.response?.status === 401 && !original._retry && !original.url?.includes('/auth/')) {
+    if (error.response?.status === 401 && !original._retry && !original.url?.includes('/authentication/')) {
       original._retry = true
       if (!isRefreshing) {
         isRefreshing = true
