@@ -15,7 +15,7 @@ export default function VerifyOtpPage() {
   const [email, setEmail] = useState('')
   const [timer, setTimer] = useState(60)
   const [canResend, setCanResend] = useState(false)
-  const [debugOtp, setDebugOtp] = useState('')
+
 
   useEffect(() => {
     if (location.state?.challengeId) {
