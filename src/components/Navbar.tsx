@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
+import { useState} from 'react'
 export function Navbar() {
   const { isAuthenticated, isAdmin, user, signOut } = useAuth();
   const navigate = useNavigate();
